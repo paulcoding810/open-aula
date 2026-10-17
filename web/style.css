@@ -143,3 +143,14 @@ progress { width: 100%; margin-top: 12px; }
   .top, .tabs, main { padding-left: 16px; padding-right: 16px; }
   .form label input[type="range"] { width: 140px; }
 }
+
+.kb.drawn { background: var(--line); border-radius: 12px; padding: 0; }
+.kb.drawn .key {
+  background: var(--card); border: 1px solid var(--line); color: var(--fg); text-shadow: none;
+  align-items: center; flex-direction: column; justify-content: center; font-size: 10px; font-weight: 500;
+}
+.kb.drawn .key::before { content: attr(data-name); font-size: 10px; opacity: 0.8; }
+.kb.drawn .key:not(:empty)::before { font-size: 8px; opacity: 0.55; }
+.kb.drawn .key:hover { border-color: var(--accent); }
+.kb.drawn .key.sel { border-color: var(--accent); background: var(--key-sel); }
+.kb.drawn .key.mapped { border-color: #f59e0b; }

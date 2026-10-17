@@ -440,6 +440,10 @@ export class Aula04 {
     });
   }
 
+  setMatrixEffect() { return Promise.reject(new Unsupported('LED matrix')); }
+  resetKeys() { return Promise.reject(new Unsupported('Keymap reset')); }
+  factoryReset() { return Promise.reject(new Unsupported('Factory reset')); }
+
   battery() {
     return this.exclusive(async () => {
       if (this.mode !== '2.4g') return null;

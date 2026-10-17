@@ -33,5 +33,13 @@ export default {
     { mode: 0x29, name: 'Off' },
   ],
   macroPlay: MACRO_PLAY,
+  settings: [
+    { key: 'winLock', label: 'Disable Windows key', type: 'check', default: 0 },
+    { key: 'altF4', label: 'Disable Alt + F4', type: 'check', default: 0 },
+    { key: 'altTab', label: 'Disable Alt + Tab', type: 'check', default: 0 },
+    { key: 'fnSwitch', label: 'Fn layer switch', type: 'select', options: [[0, 'Momentary'], [1, 'Toggle']], default: 0 },
+    { key: 'sleep', label: 'Sleep after', type: 'select', options: [[0, 'Never'], [1, '1 min'], [2, '5 min'], [3, '30 min']], default: 0 },
+    { key: 'response', label: 'Key response (debounce)', type: 'select', options: [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']], default: 1 },
+  ],
   screen: { width: 135, height: 240, headLength: 256, maxFrames: 141, chunk: 4096 },
 };

@@ -238,6 +238,26 @@ node -e "import('./web/protocol.js').then(P => {
 
 With no device connected, the app runs in simulator mode and logs every packet on the Log tab. That trace can be diffed against a USBPcap/Wireshark capture of the Windows driver.
 
+## 10. Other models
+
+### AULA F87 Pro (Electron/WebHID app — no decompiling)
+```sh
+7zz x -owork/f87/nsis "F87Pro Software.exe"
+7zz x -owork/f87/app 'work/f87/nsis/$PLUGINSDIR/app-64.7z'
+npx --yes @electron/asar extract work/f87/app/resources/app.asar work/f87/asar
+npx --yes js-beautify -s 2 work/f87/asar/dist/static/js/app.*.js > work/f87/app.pretty.js
+npx --yes js-beautify -s 2 work/f87/asar/dist/static/js/chunk-keyboard.*.js > work/f87/kbd.pretty.js
+grep -n "buildPkt_\|sendReportSuper\|GET_SAVE_ALL\|getUpdateKeyData\|getManagerData" work/f87/app.pretty.js
+```
+Where things live in the bundle:
+- `main.js` only auto-approves the WebHID picker; the renderer talks to the keyboard directly.
+- The protocol object is `Xn`. The device table is matched on productName + productId, and the effect table is `Fo`.
+- The layout comes from `getFighting87` in the keyboard chunk. It is extracted to `work/f87/fighting87.rows.json` and turned into a layout by `python3 tools/gen_f87_layout.py work/f87/fighting87.rows.json web/models/f87pro.layout.js`.
+- `work/tests/f87.diff.mjs` runs the vendor's chunking code verbatim against `web/protocols/aa.js`.
+
+### AULA F75 and SC620
+Triage only; see `work/f75/TRIAGE.md` and `work/sc620/TRIAGE.md`. The F75 is SinoWealth "BYCOMBO4" (`OemDrv.exe`, decompiled to `work/f75/oem.c`), and its layout is in `Dev/kb/*/KB.ini`.
+
 ## Open questions
 
 - None of this has been tested on hardware yet. The best confirmation is a USBPcap capture of the official driver doing the same action.

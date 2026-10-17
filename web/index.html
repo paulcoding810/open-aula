@@ -52,6 +52,10 @@
         </div>
         <div class="actions"><button class="primary" id="l-apply">Apply lighting</button></div>
       </div>
+      <div class="card" id="matrix-card">
+        <h2>LED matrix</h2>
+        <div id="matrix-modes" class="mode-grid"></div>
+      </div>
       <div class="card" id="bar-card">
         <h2>Bar light <span class="hint">experimental — hidden for this model in the official driver</span></h2>
         <div id="bar-modes" class="mode-grid"></div>
@@ -169,20 +173,16 @@
       <div class="card">
         <h2>Keyboard</h2>
         <div class="form">
-          <label class="check"><input type="checkbox" id="s-win"> Disable Windows key</label>
-          <label class="check"><input type="checkbox" id="s-altf4"> Disable Alt + F4</label>
-          <label class="check"><input type="checkbox" id="s-alttab"> Disable Alt + Tab</label>
-          <label>Fn layer switch
-            <select id="s-fn"><option value="0">Momentary</option><option value="1">Toggle</option></select>
-          </label>
-          <label>Sleep after
-            <select id="s-sleep"><option value="0">Never</option><option value="1">1 min</option><option value="2">5 min</option><option value="3">30 min</option></select>
-          </label>
-          <label>Key response (debounce)
-            <select id="s-response"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-          </label>
+          <div id="s-fields" class="form"></div>
         </div>
         <div class="actions"><button class="primary" id="s-apply">Apply settings</button></div>
+      </div>
+      <div class="card" id="reset-card">
+        <h2>Reset</h2>
+        <div class="actions left">
+          <button id="s-reset-keys">Reset keymap on keyboard</button>
+          <button id="s-reset-all">Factory reset</button>
+        </div>
       </div>
       <div class="card">
         <h2>Advanced</h2>

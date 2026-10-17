@@ -1,0 +1,50 @@
+import { KEYS } from './f87pro.layout.js';
+import { MACRO_PLAY } from '../protocols/aa.js';
+
+export default {
+  id: 'f87pro',
+  name: 'AULA F87 Pro',
+  kind: 'keyboard',
+  protocol: 'aa',
+  usb: [
+    { vendorId: 0x38a6, productId: 0x2710, role: 'usb' },
+    { vendorId: 0x38a6, productId: 0x2711, role: 'usb' },
+    { vendorId: 0x38a6, productId: 0x2712, role: 'usb' },
+    { vendorId: 0x38a6, productId: 0x2713, role: 'usb' },
+    { vendorId: 0x0c45, productId: 0x8803, role: 'usb' },
+    { vendorId: 0x0c45, productId: 0xfefc, role: 'dongle' },
+    { vendorId: 0x0c45, productId: 0xfefe, role: 'dongle' },
+  ],
+  layout: KEYS,
+  image: { src: null, width: 730, height: 260 },
+  features: { lighting: true, perkey: true, keymap: true, fnLayer: true, macros: true, settings: true, matrix: true, reset: true },
+  lightRange: { brightness: 5, speed: 5 },
+  directionMap: [0, 1, 0, 1],
+  lightModes: [
+    { mode: 1, name: 'Static', caps: 0x31 }, { mode: 2, name: 'Single On', caps: 0x33 },
+    { mode: 3, name: 'Single Off', caps: 0x33 }, { mode: 4, name: 'Glittering', caps: 0x33 },
+    { mode: 5, name: 'Fluttering', caps: 0x33 }, { mode: 6, name: 'Colourful', caps: 0x03 },
+    { mode: 7, name: 'Breath', caps: 0x33 }, { mode: 8, name: 'Spectrum', caps: 0x03 },
+    { mode: 9, name: 'Outward', caps: 0x33 }, { mode: 10, name: 'Scrolling', caps: 0x3b },
+    { mode: 11, name: 'Rolling', caps: 0x37 }, { mode: 12, name: 'Rotating', caps: 0x37 },
+    { mode: 13, name: 'Explode', caps: 0x33 }, { mode: 14, name: 'Launch', caps: 0x33 },
+    { mode: 15, name: 'Ripples', caps: 0x33 }, { mode: 16, name: 'Flowing', caps: 0x37 },
+    { mode: 17, name: 'Pulsating', caps: 0x33 }, { mode: 18, name: 'Tilt', caps: 0x37 },
+    { mode: 19, name: 'Shuttle', caps: 0x33 }, { mode: 0x17, name: 'Rainbow Windmill', caps: 0x07 },
+    { mode: 0x18, name: 'Colour Gather', caps: 0x03 }, { mode: 0x19, name: 'Neon Overlay', caps: 0x03 },
+    { mode: 0, name: 'LED Off', caps: 0x00 },
+  ],
+  matrixEffects: [
+    { value: 1, name: 'Meteor shower' }, { value: 2, name: 'Happy' }, { value: 3, name: 'Chart' },
+    { value: 4, name: 'I love you' }, { value: 5, name: 'Bouncing ball' }, { value: 6, name: 'Rolling colour bar' },
+    { value: 7, name: 'Rolling heart' }, { value: 8, name: 'Rolling ball' }, { value: 9, name: 'Excited' },
+    { value: 10, name: 'Falling at both ends' }, { value: 11, name: 'Floating fern' }, { value: 12, name: 'Sokoban' },
+    { value: 13, name: 'Down the floor' }, { value: 14, name: 'Spin balls' },
+  ],
+  macroPlay: MACRO_PLAY,
+  settings: [
+    { key: 'sleep', label: 'Sleep after (minutes, 0 = never)', type: 'number', min: 0, max: 30, default: 0 },
+    { key: 'response', label: 'Key response time', type: 'select', options: [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']], default: 3 },
+    { key: 'rate', label: 'Polling rate', type: 'select', options: [[3, '1000 Hz'], [5, '4000 Hz'], [6, '8000 Hz']], default: 3 },
+  ],
+};

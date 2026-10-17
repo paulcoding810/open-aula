@@ -11,7 +11,7 @@ const DEFAULTS = {
   perkey: { brightness: 5, colors: {} },
   keymap: { base: {}, fn: {} },
   macros: [{ name: 'Macro 1', steps: [] }],
-  settings: { winLock: 0, altF4: 0, altTab: 0, fnSwitch: 0, sleep: 0, response: 1 },
+  settings: {},
   barMode: 0x20,
   delay: 35,
 };
@@ -24,12 +24,20 @@ function safeGet(k) {
   try { return localStorage.getItem(k); } catch { return null; }
 }
 
+function defaults() {
+  const d = structuredClone(DEFAULTS);
+  d.settings = Object.fromEntries((model.settings ?? []).map((f) => [f.key, f.default]));
+  return d;
+}
+
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(storeKey(model.id)) ?? (model.id === 's75pro' ? localStorage.getItem('s75pro-config') : null));
-    return s ? { ...structuredClone(DEFAULTS), ...s } : structuredClone(DEFAULTS);
+    if (!s) return defaults();
+    const d = defaults();
+    return { ...d, ...s, settings: { ...d.settings, ...s.settings } };
   } catch {
-    return structuredClone(DEFAULTS);
+    return defaults();
   }
 }
 function save() {
@@ -169,6 +177,8 @@ function applyFeatures() {
   const f = model.features;
   $$('#tabs button').forEach((b) => (b.hidden = b.dataset.tab !== 'log' && !f[b.dataset.tab]));
   $('#bar-card').hidden = !f.bar;
+  $('#matrix-card').hidden = !f.matrix;
+  $('#reset-card').hidden = !f.reset;
   $('#km-layer [data-layer="fn"]').hidden = !f.fnLayer;
   const active = $('#tabs button.active');
   if (active?.hidden) $$('#tabs button').find((b) => !b.hidden)?.click();
@@ -191,7 +201,8 @@ window.addEventListener('pointerup', () => (painting = false));
 
 function keyboardView(root, { onPress, onEnter, onContext }) {
   const { src, width: W, height: H } = model.image;
-  root.innerHTML = `<img src="${src}" alt="">`;
+  root.innerHTML = src ? `<img src="${src}" alt="">` : '';
+  root.classList.toggle('drawn', !src);
   root.style.aspectRatio = `${W} / ${H}`;
   const els = {};
   for (const k of model.layout) {
@@ -202,6 +213,7 @@ function keyboardView(root, { onPress, onEnter, onContext }) {
       width: `${(k.w / W) * 100}%`, height: `${(k.h / H) * 100}%`,
     });
     el.title = k.name;
+    el.dataset.name = k.name;
     el.onpointerdown = (e) => {
       if (e.button !== 0) return;
       painting = true;
@@ -251,9 +263,17 @@ function initLighting() {
     run(e.target, 'Lighting', () => kb.setLighting({
       mode: L.mode, r, g, b,
       colorful: caps & CAP.COLORFUL ? L.colorful : 0,
-      brightness: L.brightness, speed: L.speed, direction: L.direction,
+      brightness: L.brightness, speed: L.speed, direction: model.directionMap?.[L.direction] ?? L.direction,
     }));
   };
+  const matrix = $('#matrix-modes');
+  matrix.innerHTML = '';
+  for (const m of model.matrixEffects ?? []) {
+    const b = document.createElement('button');
+    b.textContent = m.name;
+    b.onclick = (e) => run(e.target, `Matrix: ${m.name}`, () => kb.setMatrixEffect(m.value));
+    matrix.appendChild(b);
+  }
   const bar = $('#bar-modes');
   bar.innerHTML = '';
   for (const m of model.barModes ?? []) {
@@ -384,7 +404,7 @@ function selectKey(k) {
   const a = state.keymap[layer][k.code] ?? { type: 'default' };
   $('#km-type').value = a.type;
   $$('#km-mods input').forEach((i) => (i.checked = !!((a.mods ?? 0) & +i.value)));
-  $('#km-code').value = a.code ?? k.code;
+  $('#km-code').value = a.code ?? k.hid ?? k.code;
   if (a.type === 'mouse') $('#km-mouse').value = a.id;
   if (a.type === 'media') $('#km-media').value = a.usage;
   refreshMacroSelect();
@@ -640,15 +660,33 @@ function initScreen() {
 
 function initSettings() {
   const S = state.settings;
-  const bind = [
-    ['#s-win', 'winLock', 'check'], ['#s-altf4', 'altF4', 'check'], ['#s-alttab', 'altTab', 'check'],
-    ['#s-fn', 'fnSwitch'], ['#s-sleep', 'sleep'], ['#s-response', 'response'],
-  ];
-  for (const [id, key, kind] of bind) {
-    const el = $(id);
-    if (kind === 'check') el.checked = !!S[key]; else el.value = S[key];
-    el.onchange = () => { S[key] = kind === 'check' ? (el.checked ? 1 : 0) : +el.value; save(); };
+  const root = $('#s-fields');
+  root.innerHTML = '';
+  for (const f of model.settings ?? []) {
+    const label = document.createElement('label');
+    let input;
+    if (f.type === 'check') {
+      label.className = 'check';
+      input = Object.assign(document.createElement('input'), { type: 'checkbox', checked: !!S[f.key] });
+      label.append(input, ` ${f.label}`);
+    } else {
+      if (f.type === 'select') {
+        input = document.createElement('select');
+        input.innerHTML = f.options.map(([v, n]) => `<option value="${v}">${n}</option>`).join('');
+      } else {
+        input = Object.assign(document.createElement('input'), { type: 'number', min: f.min, max: f.max });
+      }
+      input.value = S[f.key];
+      label.append(`${f.label} `, input);
+    }
+    input.onchange = () => {
+      S[f.key] = f.type === 'check' ? (input.checked ? 1 : 0) : Math.min(f.max ?? Infinity, Math.max(f.min ?? -Infinity, +input.value || 0));
+      save();
+    };
+    root.appendChild(label);
   }
+  $('#s-reset-keys').onclick = (e) => confirm('Reset all key assignments on the keyboard to factory defaults?') && run(e.target, 'Keymap reset', () => kb.resetKeys());
+  $('#s-reset-all').onclick = (e) => confirm('Factory reset the keyboard? This clears lighting, keymaps and macros.') && run(e.target, 'Factory reset', () => kb.factoryReset());
   $('#s-apply').onclick = (e) => run(e.target, 'Settings', () => kb.setSettings(S));
   $('#s-delay').value = state.delay;
   $('#s-delay').onchange = (e) => { state.delay = Math.max(5, +e.target.value || 35); kb.delay = state.delay; save(); };
@@ -661,7 +699,9 @@ function initSettings() {
   };
   $('#s-import').onchange = async (e) => {
     try {
-      state = { ...structuredClone(DEFAULTS), ...JSON.parse(await e.target.files[0].text()) };
+      const d = defaults();
+      const imported = JSON.parse(await e.target.files[0].text());
+      state = { ...d, ...imported, settings: { ...d.settings, ...imported.settings } };
       save();
       location.reload();
     } catch (err) {
