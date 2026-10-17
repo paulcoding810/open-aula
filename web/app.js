@@ -1,6 +1,6 @@
 import { HID_NAMES, MODIFIERS, MOUSE_ACTIONS, MEDIA_ACTIONS, hidFromEvent, hidName } from './keycodes.js';
-import { CAP, DIRECTION, rgb565 } from './common.js';
-import { MODELS, modelById, hidFilters, attach as attachModel, simulator } from './models/index.js';
+import { CAP, DIRECTION, rgb565, matchesId } from './common.js';
+import { MODELS, modelById, hidFilters, attachModel, modelForDevice, simulator } from './models/index.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -89,8 +89,8 @@ function setStatus() {
   $('#model-name').textContent = model.name;
   $('#sim-model').hidden = kb.mode !== 'sim';
   $('#sim-model').value = model.id;
+  renderDevices();
   s.className = 'pill ' + (kb.mode === 'sim' ? 'sim' : 'on');
-  $('#connect').hidden = kb.mode !== 'sim';
   $('#disconnect').hidden = kb.mode === 'sim';
   $('#battery').hidden = true;
   if (kb.mode === '2.4g') refreshBattery();
@@ -104,15 +104,48 @@ async function refreshBattery() {
   }
 }
 
-async function attach(devices) {
-  const k = await attachModel(devices, { log, delay: state.delay });
-  if (!k) return false;
-  if (k.model.id !== model.id) setModel(k.model);
-  kb = k;
-  kb.delay = state.delay;
+const connected = new Map();
+const dismissed = new Set();
+const warned = new Set();
+const devsOf = (k) => [k.main, k.screen, k.dongle].filter(Boolean).map((h) => h.dev);
+
+async function sync(preferId) {
+  const all = await navigator.hid.getDevices();
+  for (const [id, k] of connected) if (!devsOf(k).every((d) => all.includes(d))) connected.delete(id);
+  for (const m of MODELS) {
+    if (connected.has(m.id) || (dismissed.has(m.id) && m.id !== preferId)) continue;
+    const k = await attachModel(m, all, { log, delay: state.delay }).catch((e) => { log('⚠', `${m.name}: ${e.message}`); return null; });
+    if (!k) {
+      const seen = all.find((d) => matchesId(d, m.usb));
+      if (seen && (m.id === preferId || !warned.has(m.id))) {
+        warned.add(m.id);
+        toast(`${m.name} found, but not its configuration interface. Click "Connect device" and also select the other "${seen.productName}" entries in the list.`, true);
+      }
+      continue;
+    }
+    connected.set(m.id, k);
+    dismissed.delete(m.id);
+    log('ℹ', `connected ${m.name}: ${['main', 'screen', 'dongle'].filter((x) => k[x]).join(', ')}`);
+  }
+  activate(connected.get(preferId) ?? (kb.mode !== 'sim' ? connected.get(kb.model.id) : null) ?? connected.values().next().value);
+}
+
+function activate(k) {
+  if (!k) {
+    if (kb.mode !== 'sim') kb = simulator(model, { log, delay: state.delay });
+  } else {
+    kb = k;
+    kb.delay = state.delay;
+    if (k.model.id !== model.id) setModel(k.model);
+  }
   setStatus();
-  log('ℹ', `connected ${model.name}: ${['main', 'screen', 'dongle'].filter((x) => kb[x]).join(', ')}`);
-  return true;
+}
+
+function renderDevices() {
+  const sel = $('#device-select');
+  sel.innerHTML = [...connected.values()].map((k) => `<option value="${k.model.id}">${k.model.name}</option>`).join('');
+  sel.value = kb.model.id;
+  sel.hidden = connected.size < 2;
 }
 
 function setModel(m) {
@@ -132,19 +165,20 @@ async function connect() {
   try {
     const picked = await navigator.hid.requestDevice({ filters: hidFilters() });
     if (!picked.length) return;
-    const all = await navigator.hid.getDevices();
-    if (!(await attach([...picked, ...all]))) {
-      toast('No configuration interface found on that device', true);
-    }
+    const m = modelForDevice(picked[0]);
+    await sync(m?.id);
+    if (!m) toast('That device is not a supported model', true);
   } catch (e) {
     toast(`Connect failed: ${e.message}`, true);
   }
 }
 
 async function disconnect() {
-  for (const k of [kb.main, kb.screen, kb.dongle]) if (k?.dev.opened) await k.dev.close();
-  kb = simulator(model, { log, delay: state.delay });
-  setStatus();
+  if (kb.mode === 'sim') return;
+  for (const d of devsOf(kb)) if (d.opened) await d.close();
+  connected.delete(kb.model.id);
+  dismissed.add(kb.model.id);
+  activate(connected.values().next().value);
 }
 
 function initConnection() {
@@ -158,17 +192,18 @@ function initConnection() {
   }
   $('#connect').onclick = connect;
   $('#disconnect').onclick = disconnect;
+  $('#device-select').onchange = (e) => activate(connected.get(e.target.value));
   navigator.hid.addEventListener('disconnect', (e) => {
-    if ([kb.main, kb.dongle].some((k) => k?.dev === e.device)) {
-      kb = simulator(model, { log, delay: state.delay });
-      setStatus();
-      toast('Keyboard disconnected', true);
+    for (const [id, k] of connected) {
+      if (!devsOf(k).includes(e.device)) continue;
+      connected.delete(id);
+      toast(`${k.model.name} disconnected`, true);
+      if (kb === k) activate(connected.values().next().value);
+      else setStatus();
     }
   });
-  navigator.hid.addEventListener('connect', async () => {
-    if (kb.mode === 'sim') await attach(await navigator.hid.getDevices());
-  });
-  navigator.hid.getDevices().then((d) => attach(d)).finally(setStatus);
+  navigator.hid.addEventListener('connect', (e) => sync(modelForDevice(e.device)?.id));
+  sync(model.id).finally(setStatus);
   setInterval(() => kb.mode === '2.4g' && refreshBattery(), 60_000);
 }
 
@@ -285,12 +320,13 @@ function initLighting() {
     b.onclick = () => { state.barMode = m.mode; save(); renderBar(); };
     bar.appendChild(b);
   }
-  $('#bar-apply').onclick = (e) => run(e.target, 'Bar light', () => kb.setBarLight(state.barMode));
+  $('#bar-apply').onclick = (e) => run(e.target, 'Side lights', () => kb.setBarLight(state.barMode));
   renderBar();
   renderLighting();
 }
 
 function renderBar() {
+  if (!(model.barModes ?? []).some((m) => m.mode === state.barMode)) state.barMode = model.barModes?.[0]?.mode;
   $$('#bar-modes button').forEach((b) => b.classList.toggle('active', +b.dataset.mode === state.barMode));
 }
 

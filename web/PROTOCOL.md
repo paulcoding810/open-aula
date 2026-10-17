@@ -85,11 +85,13 @@ A 32-byte output report: `cmd len seq data[28] checksum`, where checksum = sum o
 | `20` (len 1) | battery query; reply byte 3 = percent |
 | `7f`, `80+` | screen over the dongle (not used) |
 
-## Bar / side light (experimental)
+## Side lights (experimental)
 
 The driver supports this, but `rgb-keyboard.xml` turns it off for the S75 Pro (`sidelight="0"`). It uses the same lighting command, with the mode in byte 0 and the rest zero:
 `18` → `13 count=1` → `mode 00 … aa55` → `02` → `f0`.
 Modes: `20` Flowing, `21` Red, `22` Yellow, `23` Green, `24` Ice Blue, `25` Blue, `26` Pink, `27` White, `28` Neon, `29` Off.
+Tested on an S75 Pro over 2.4 GHz, the firmware doesn't follow the driver's list. `22` shows blue, `23` pink/neon, and `24` turns the side lights off. `25`–`29` (including the driver's Off) do nothing. The web app offers only `20`–`24`, labelled by what the keyboard actually does.
+The keyboard's light bar (toggled with Fn+Z) is handled in firmware; the vendor driver has no command for it.
 Over the dongle: cmd `05`, len `01`, data[0] = mode, `aa55` at data[14].
 
 ---

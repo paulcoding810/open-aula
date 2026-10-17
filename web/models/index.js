@@ -15,6 +15,16 @@ export const modelById = (id) => MODELS.find((m) => m.id === id) ?? MODELS[0];
 
 export const hidFilters = () => MODELS.flatMap((m) => m.usb.map(({ vendorId, productId }) => ({ vendorId, productId })));
 
+export const modelForDevice = (dev) => MODELS.find((m) => matchesId(dev, m.usb));
+
+export async function attachModel(model, devices, opts) {
+  const mine = devices.filter((d) => matchesId(d, model.usb));
+  if (!mine.length) return null;
+  const Proto = PROTOCOLS[model.protocol];
+  const handles = await Proto.discover(mine, model);
+  return handles ? new Proto(handles, model, opts) : null;
+}
+
 export async function attach(devices, opts) {
   for (const model of MODELS) {
     const mine = devices.filter((d) => matchesId(d, model.usb));

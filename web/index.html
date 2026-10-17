@@ -13,10 +13,11 @@
       <span class="sub">Web Driver</span>
     </div>
     <div class="conn">
+      <select id="device-select" title="Connected devices" hidden></select>
       <select id="sim-model" title="Model to simulate"></select>
       <span id="status" class="pill off">Not connected</span>
       <span id="battery" class="pill" hidden></span>
-      <button id="connect" class="primary">Connect keyboard</button>
+      <button id="connect" class="primary">Connect device</button>
       <button id="disconnect" hidden>Disconnect</button>
     </div>
   </header>
@@ -59,9 +60,9 @@
         <div id="matrix-modes" class="mode-grid"></div>
       </div>
       <div class="card" id="bar-card">
-        <h2>Bar light <span class="hint">experimental — hidden for this model in the official driver</span></h2>
+        <h2>Side lights <span class="hint">experimental — hidden for this model in the official driver</span></h2>
         <div id="bar-modes" class="mode-grid"></div>
-        <div class="actions"><button class="primary" id="bar-apply">Apply bar light</button></div>
+        <div class="actions"><button class="primary" id="bar-apply">Apply side lights</button></div>
       </div>
     </section>
 

@@ -27,10 +27,8 @@ export default {
     { mode: 19, name: 'Shuttle', caps: 0x33 }, { mode: 0, name: 'LED Off', caps: 0x00 },
   ],
   barModes: [
-    { mode: 0x20, name: 'Flowing' }, { mode: 0x21, name: 'Red' }, { mode: 0x22, name: 'Yellow' },
-    { mode: 0x23, name: 'Green' }, { mode: 0x24, name: 'Ice Blue' }, { mode: 0x25, name: 'Blue' },
-    { mode: 0x26, name: 'Pink' }, { mode: 0x27, name: 'White' }, { mode: 0x28, name: 'Neon' },
-    { mode: 0x29, name: 'Off' },
+    { mode: 0x20, name: 'Flowing' }, { mode: 0x21, name: 'Red' }, { mode: 0x22, name: 'Blue' },
+    { mode: 0x23, name: 'Neon' }, { mode: 0x24, name: 'Off' },
   ],
   macroPlay: MACRO_PLAY,
   settings: [
