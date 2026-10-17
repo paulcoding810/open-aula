@@ -695,6 +695,14 @@ function initScreen() {
     bar.hidden = true;
   };
   $('#sc-time').onclick = (e) => run(e.target, 'Clock sync', () => kb.syncTime(1));
+  $('#sc-blank').onclick = async (e) => {
+    const { width: w, height: h } = model.screen;
+    const bar = $('#sc-progress');
+    bar.hidden = false;
+    bar.value = 0;
+    await run(e.target, 'Blank screen', () => kb.uploadScreen([{ pixels: new Uint8Array(w * h * 2), delayMs: 1000 }], 1, (p) => (bar.value = p)));
+    bar.hidden = true;
+  };
 }
 
 // ---------- mouse ----------
