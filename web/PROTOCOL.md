@@ -128,3 +128,42 @@ Key entries use the same encoding as the S75 Pro: `02 mods hid`, `03 lo hi` (con
 - At each address: `u16 (2 × records), 00 00`, then 4-byte records `delayLo delayHi hid flag`.
 - Flags: `b0` key down, `30` key up, `90` mouse down, `10` mouse up.
 - The delay belongs to the record it's in; there are no separate delay records.
+
+---
+
+# AULA F75 (SinoWealth "BYCOMBO4" / `CDevG5KB`)
+
+Reverse-engineered from `OemDrv.exe` in `AULA F75 driver.exe`, decompiled to `work/f75/oem.c`. `KB.ini` has `Fw=24` (0x18), which selects the `CDevG5KB` class.
+
+## Transport
+- USB `258A:010C`, on the interface with usage page `FF00`, usage 1. It uses 520-byte feature reports (0x208, including the report ID) with report ID **6**.
+- The 2.4 GHz dongle `3554:FA09` goes through a separate delegate class and isn't supported.
+- Packet: `06 cmd sub 00 total idx sizeLo sizeHi` + up to 512 data bytes.
+- Writes are split into 512-byte chunks (`total` chunks, `idx` 0..total-1).
+- Reads send the same header with `cmd | 0x80`, then GetFeature returns the data at byte 8. There's a ~20 ms pause before each packet.
+
+## Commands (vtable of `CDevG5KB`)
+| Write | Read | Data |
+|---|---|---|
+| `03` sub=layer | `83` | key matrix, `MatrixLen`(128) × 4 bytes; with `CRC=1` the last entry is `00 00 5A A5` |
+| `04` | `84` | LED/config block, 128 bytes, signature `5A A5` at 126 |
+| `05` | `85` | macro buffer |
+| `06` sub=group | `86` | colour group (three colour planes) |
+| `0A` | `8A` | effect colour table: 21 bytes (7 × RGB) per effect slot, starting at offset 21; padded to 512 bytes with `5A A5` at 0x1FA |
+| `0B` | – | screen parameters |
+| `11` | – | ResetDevice (1 data byte; the value isn't known, so it isn't used) |
+
+## Key entries (`keyinfo_to_hardware_code`, FUN_0048c820)
+- Unset entries mean *no function*, so every key's default must be written. The defaults are `00 00 hid 00`, with Fn = `0D 00 00 00` and the knob = `07 00 00 1D` (from the `KB.ini` raw code).
+- `00 mods hid hid2`: keyboard key; modifiers as HID `E0`–`E7` in byte 2.
+- `02 00 usageHi usageLo`: consumer key.
+- `01 btn 01 00`: mouse button (1 left, 2 right, 3 middle, 4/5 side). `01 01 02 00` is a double click; `01 08` / `01 09` are wheel up/down.
+- `03 mode count id`: macro, with mode 1 = repeat count times, 2 = while held, 4 = until any key; `id` is the 0-based index in the macro buffer.
+
+## LED block (read-modify-write)
+- byte 3: debounce. byte 10: active hardware effect (`KB.ini` `LedOptN = ui,hw,…`). byte 0x18: sleep (`SleepHW`).
+- Effect slot *i* (`LedOpt` order): `0x3A+2i` = brightness (0–9); `0x3B+2i` = `speed<<4 | colourIndex`, where colour index 0–6 picks from the effect's 7 table colours and 7 means random.
+
+## Macro buffer
+- Table: one `u16 addr, u16 size` entry per macro, with addresses counted from the buffer start. Only macros bound to keys are written, in binding order.
+- Each macro: a name-length byte, the UTF-16LE name, then 4-byte events `type<<4 | up<<7 | delay[19:16], delay[15:8], delay[7:0], code`. Types: 1 key, 2 mouse, 5 wheel.

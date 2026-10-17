@@ -394,7 +394,10 @@ function initKeymap() {
     window.addEventListener('keydown', handler, true);
   };
   $('#km-reset').onclick = () => { state.keymap[layer] = {}; save(); renderKeymap(); };
-  $('#km-apply').onclick = (e) => run(e.target, `${layer === 'fn' ? 'Fn' : 'Base'} layer`, () => kb.setKeymap(layer, model.layout, state.keymap[layer]));
+  $('#km-apply').onclick = (e) => {
+    kb.macros = state.macros;
+    run(e.target, `${layer === 'fn' ? 'Fn' : 'Base'} layer`, () => kb.setKeymap(layer, model.layout, state.keymap[layer]));
+  };
   renderKeymap();
 }
 
