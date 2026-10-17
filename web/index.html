@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AULA Web Driver</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <h1 id="model-name">AULA</h1>
+      <span class="sub">Web Driver</span>
+    </div>
+    <div class="conn">
+      <select id="sim-model" title="Model to simulate"></select>
+      <span id="status" class="pill off">Not connected</span>
+      <span id="battery" class="pill" hidden></span>
+      <button id="connect" class="primary">Connect keyboard</button>
+      <button id="disconnect" hidden>Disconnect</button>
+    </div>
+  </header>
+
+  <div id="unsupported" class="banner" hidden>
+    This browser doesn't support WebHID. Use Chrome, Edge or another Chromium browser on desktop. Simulator mode still works, and logs the packets it would send.
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="lighting" class="active">Lighting</button>
+    <button data-tab="perkey">Per-key RGB</button>
+    <button data-tab="keymap">Keymap</button>
+    <button data-tab="macros">Macros</button>
+    <button data-tab="screen">Screen</button>
+    <button data-tab="settings">Settings</button>
+    <button data-tab="log">Log</button>
+  </nav>
+
+  <main>
+    <section id="tab-lighting" class="tab active">
+      <div class="card">
+        <h2>Effect</h2>
+        <div id="modes" class="mode-grid"></div>
+      </div>
+      <div class="card">
+        <h2>Options</h2>
+        <div class="form">
+          <label data-cap="1">Brightness <input type="range" id="l-brightness" min="0" max="5"><output></output></label>
+          <label data-cap="2">Speed <input type="range" id="l-speed" min="0" max="5"><output></output></label>
+          <div data-cap="12" class="radio-row" id="l-direction"></div>
+          <label data-cap="16" class="check"><input type="checkbox" id="l-colorful"> Rainbow colours</label>
+          <label data-cap="32">Colour <input type="color" id="l-color"></label>
+        </div>
+        <div class="actions"><button class="primary" id="l-apply">Apply lighting</button></div>
+      </div>
+      <div class="card" id="bar-card">
+        <h2>Bar light <span class="hint">experimental — hidden for this model in the official driver</span></h2>
+        <div id="bar-modes" class="mode-grid"></div>
+        <div class="actions"><button class="primary" id="bar-apply">Apply bar light</button></div>
+      </div>
+    </section>
+
+    <section id="tab-perkey" class="tab">
+      <div class="card">
+        <div class="toolbar">
+          <label>Paint <input type="color" id="pk-color" value="#ff0000"></label>
+          <label>Brightness <input type="range" id="pk-brightness" min="0" max="5" value="5"><output></output></label>
+          <button id="pk-fill">Fill all</button>
+          <button id="pk-clear">Clear</button>
+          <button id="pk-read">Read from keyboard</button>
+        </div>
+        <div class="kb" id="kb-perkey"></div>
+        <p class="hint">Click or drag across keys to paint them. Right-click a key to pick up its colour.</p>
+        <div class="actions"><button class="primary" id="pk-apply">Apply per-key lighting</button></div>
+      </div>
+    </section>
+
+    <section id="tab-keymap" class="tab">
+      <div class="card">
+        <div class="toolbar">
+          <div class="seg" id="km-layer">
+            <button data-layer="base" class="active">Base layer</button>
+            <button data-layer="fn">Fn layer</button>
+          </div>
+          <button id="km-reset">Reset layer</button>
+        </div>
+        <div class="kb" id="kb-keymap"></div>
+        <div id="km-editor" class="editor" hidden>
+          <h3 id="km-title"></h3>
+          <div class="form">
+            <label>Action
+              <select id="km-type">
+                <option value="default">Default</option>
+                <option value="disable">Disabled</option>
+                <option value="key">Key / combination</option>
+                <option value="mouse">Mouse</option>
+                <option value="media">Media &amp; apps</option>
+                <option value="macro">Macro</option>
+              </select>
+            </label>
+            <div data-for="key" class="sub-form">
+              <div class="mods" id="km-mods"></div>
+              <label>Key <select id="km-code"></select></label>
+              <button id="km-capture">Press a key…</button>
+            </div>
+            <div data-for="mouse" class="sub-form"><label>Mouse action <select id="km-mouse"></select></label></div>
+            <div data-for="media" class="sub-form"><label>Function <select id="km-media"></select></label></div>
+            <div data-for="macro" class="sub-form">
+              <label>Macro <select id="km-macro"></select></label>
+              <label>Playback <select id="km-macro-mode"></select></label>
+              <label>Repeat count <input type="number" id="km-macro-loops" min="1" max="255" value="1"></label>
+            </div>
+          </div>
+        </div>
+        <div class="actions"><button class="primary" id="km-apply">Apply layer</button></div>
+      </div>
+    </section>
+
+    <section id="tab-macros" class="tab">
+      <div class="split">
+        <div class="card">
+          <h2>Macros</h2>
+          <ul id="mc-list" class="list"></ul>
+          <div class="actions left">
+            <button id="mc-add">New</button>
+            <button id="mc-rename">Rename</button>
+            <button id="mc-delete">Delete</button>
+          </div>
+        </div>
+        <div class="card grow">
+          <h2 id="mc-title">Steps</h2>
+          <div class="toolbar">
+            <button id="mc-record">● Record</button>
+            <label class="check"><input type="checkbox" id="mc-delays" checked> Record delays</label>
+            <button id="mc-add-delay">+ Delay</button>
+            <button id="mc-add-click">+ Left click</button>
+            <button id="mc-clear">Clear</button>
+          </div>
+          <ol id="mc-steps" class="steps"></ol>
+          <p class="hint">Bind a macro to a key on the Keymap tab. Uploading sends every macro at once.</p>
+          <div class="actions"><button class="primary" id="mc-apply">Upload macros</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-screen" class="tab">
+      <div class="split">
+        <div class="card">
+          <h2>Screen image</h2>
+          <div class="form">
+            <label>Image or GIF <input type="file" id="sc-file" accept="image/gif,image/png,image/jpeg,image/webp"></label>
+            <label>Fit
+              <select id="sc-fit"><option value="contain">Fit (letterbox)</option><option value="cover">Fill (crop)</option></select>
+            </label>
+            <p id="sc-info" class="hint"></p>
+          </div>
+          <progress id="sc-progress" max="1" value="0" hidden></progress>
+          <div class="actions left">
+            <button class="primary" id="sc-upload" disabled>Upload to screen</button>
+            <button id="sc-time">Sync clock</button>
+          </div>
+        </div>
+        <div class="card center">
+          <canvas id="sc-preview" width="135" height="240"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="tab">
+      <div class="card">
+        <h2>Keyboard</h2>
+        <div class="form">
+          <label class="check"><input type="checkbox" id="s-win"> Disable Windows key</label>
+          <label class="check"><input type="checkbox" id="s-altf4"> Disable Alt + F4</label>
+          <label class="check"><input type="checkbox" id="s-alttab"> Disable Alt + Tab</label>
+          <label>Fn layer switch
+            <select id="s-fn"><option value="0">Momentary</option><option value="1">Toggle</option></select>
+          </label>
+          <label>Sleep after
+            <select id="s-sleep"><option value="0">Never</option><option value="1">1 min</option><option value="2">5 min</option><option value="3">30 min</option></select>
+          </label>
+          <label>Key response (debounce)
+            <select id="s-response"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+        </div>
+        <div class="actions"><button class="primary" id="s-apply">Apply settings</button></div>
+      </div>
+      <div class="card">
+        <h2>Advanced</h2>
+        <div class="form">
+          <label>Delay between packets (ms) <input type="number" id="s-delay" min="5" max="200" value="35"></label>
+          <button id="s-export">Export config</button>
+          <label class="file-btn">Import config <input type="file" id="s-import" accept="application/json" hidden></label>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-log" class="tab">
+      <div class="card">
+        <div class="toolbar"><button id="log-clear">Clear</button><label class="check"><input type="checkbox" id="log-on" checked> Log packets</label></div>
+        <pre id="log" class="log"></pre>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

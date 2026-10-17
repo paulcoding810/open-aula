@@ -1,0 +1,8 @@
+# Reversing workspace: extracted vendor files, Ghidra project, decompiled dumps
+work/
+
+# Vendor installers
+*.exe
+
+.DS_Store
+__pycache__/
