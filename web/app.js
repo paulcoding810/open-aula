@@ -27,6 +27,7 @@ function safeGet(k) {
 function defaults() {
   const d = structuredClone(DEFAULTS);
   d.settings = Object.fromEntries((model.settings ?? []).map((f) => [f.key, f.default]));
+  if (model.mouseDefaults) d.mouse = structuredClone(model.mouseDefaults);
   return d;
 }
 
@@ -35,7 +36,7 @@ function load() {
     const s = JSON.parse(localStorage.getItem(storeKey(model.id)) ?? (model.id === 's75pro' ? localStorage.getItem('s75pro-config') : null));
     if (!s) return defaults();
     const d = defaults();
-    return { ...d, ...s, settings: { ...d.settings, ...s.settings } };
+    return { ...d, ...s, settings: { ...d.settings, ...s.settings }, mouse: d.mouse && { ...d.mouse, ...s.mouse } };
   } catch {
     return defaults();
   }
@@ -190,6 +191,7 @@ function initTabs() {
       $$('#tabs button').forEach((x) => x.classList.toggle('active', x === b));
       $$('.tab').forEach((t) => t.classList.toggle('active', t.id === `tab-${b.dataset.tab}`));
       if (b.dataset.tab === 'keymap') refreshMacroSelect();
+      if (b.dataset.tab === 'buttons') initButtons();
     };
   });
 }
@@ -200,7 +202,7 @@ let painting = false;
 window.addEventListener('pointerup', () => (painting = false));
 
 function keyboardView(root, { onPress, onEnter, onContext }) {
-  const { src, width: W, height: H } = model.image;
+  const { src, width: W, height: H } = model.image ?? { src: null, width: 1, height: 1 };
   root.innerHTML = src ? `<img src="${src}" alt="">` : '';
   root.classList.toggle('drawn', !src);
   root.style.aspectRatio = `${W} / ${H}`;
@@ -659,6 +661,74 @@ function initScreen() {
   $('#sc-time').onclick = (e) => run(e.target, 'Clock sync', () => kb.syncTime(1));
 }
 
+// ---------- mouse ----------
+
+const mouseConfig = () => ({ ...state.settings, ...state.mouse, lightMode: state.light.mode });
+
+function initDpi() {
+  const root = $('#dpi-stages');
+  root.innerHTML = '';
+  if (!state.mouse) return;
+  const M = state.mouse;
+  M.dpi.forEach((v, i) => {
+    const row = document.createElement('div');
+    row.className = 'dpi-stage';
+    row.innerHTML = `<label class="check"><input type="radio" name="dpi-active" ${i === M.dpiIndex ? 'checked' : ''}> Stage ${i + 1}</label>
+      <input type="range" min="50" max="26000" step="50" value="${v}">
+      <input type="number" min="50" max="26000" step="50" value="${v}">
+      <input type="color" value="${rgbToHex(M.dpiColors[i])}">`;
+    const [radio, range, num, color] = row.querySelectorAll('input');
+    radio.onchange = () => { M.dpiIndex = i; save(); };
+    const set = (x) => { M.dpi[i] = Math.max(50, Math.min(26000, Math.round(+x / 50) * 50)); range.value = num.value = M.dpi[i]; save(); };
+    range.oninput = () => set(range.value);
+    num.onchange = () => set(num.value);
+    color.oninput = () => { M.dpiColors[i] = hexToRgb(color.value); save(); };
+    root.appendChild(row);
+  });
+  $('#dpi-apply').onclick = (e) => run(e.target, 'DPI', () => kb.setMouseConfig(mouseConfig()));
+}
+
+function initButtons() {
+  const root = $('#btn-list');
+  root.innerHTML = '';
+  if (!state.mouse) return;
+  const M = state.mouse;
+  const types = [['default', 'Default'], ['disable', 'Disabled'], ['mouse', 'Mouse'], ['key', 'Keyboard key'], ['media', 'Media'], ['dpiLoop', 'DPI cycle'], ['macro', 'Macro']];
+  (model.buttonSlots ?? []).forEach((name, i) => {
+    const a = M.buttons[i] ?? { type: 'default' };
+    const row = document.createElement('div');
+    row.className = 'btn-row';
+    const typeSel = `<select data-f="type">${types.map(([v, n]) => `<option value="${v}" ${a.type === v ? 'selected' : ''}>${n}</option>`).join('')}</select>`;
+    const sub = {
+      mouse: `<select data-f="id">${MOUSE_ACTIONS.map((m) => `<option value="${m.id}" ${a.id === m.id ? 'selected' : ''}>${m.name}</option>`).join('')}</select>`,
+      key: `<select data-f="code">${Object.entries(HID_NAMES).map(([c, n]) => `<option value="${c}" ${a.code === +c ? 'selected' : ''}>${n}</option>`).join('')}</select>`,
+      media: `<select data-f="usage">${MEDIA_ACTIONS.map(([n, u]) => `<option value="${u}" ${a.usage === u ? 'selected' : ''}>${n}</option>`).join('')}</select>`,
+      macro: `<select data-f="index">${state.macros.map((m, j) => `<option value="${j}" ${a.index === j ? 'selected' : ''}>${j + 1}. ${escapeHtml(m.name)}</option>`).join('')}</select>
+        <select data-f="mode">${(model.macroPlay ?? []).map((n, j) => `<option value="${j}" ${a.mode === j ? 'selected' : ''}>${n}</option>`).join('')}</select>
+        <input data-f="loops" type="number" min="1" max="255" value="${a.loops ?? 1}" title="Repeat count">`,
+    }[a.type] ?? '';
+    row.innerHTML = `<span>${name}</span>${typeSel}${sub}`;
+    row.querySelectorAll('[data-f]').forEach((el) => {
+      el.onchange = () => {
+        const f = el.dataset.f;
+        if (f === 'type') {
+          const fresh = { default: null, disable: { type: 'disable' }, mouse: { type: 'mouse', id: 1 }, key: { type: 'key', code: 0x04, mods: 0 },
+            media: { type: 'media', usage: MEDIA_ACTIONS[0][1] }, dpiLoop: { type: 'dpiLoop' }, macro: { type: 'macro', index: 0, mode: 0, loops: 1 } }[el.value];
+          if (el.value === 'macro' && !state.macros.length) { toast('Create a macro on the Macros tab first', true); el.value = a.type; return; }
+          M.buttons[i] = fresh;
+        } else {
+          M.buttons[i] = { ...a, [f]: +el.value };
+        }
+        save();
+        initButtons();
+      };
+    });
+    root.appendChild(row);
+  });
+  $('#btn-reset').onclick = () => { M.buttons = []; save(); initButtons(); };
+  $('#btn-apply').onclick = (e) => run(e.target, 'Buttons', () => kb.setButtons(M.buttons, state.macros));
+}
+
 // ---------- settings ----------
 
 function initSettings() {
@@ -690,7 +760,7 @@ function initSettings() {
   }
   $('#s-reset-keys').onclick = (e) => confirm('Reset all key assignments on the keyboard to factory defaults?') && run(e.target, 'Keymap reset', () => kb.resetKeys());
   $('#s-reset-all').onclick = (e) => confirm('Factory reset the keyboard? This clears lighting, keymaps and macros.') && run(e.target, 'Factory reset', () => kb.factoryReset());
-  $('#s-apply').onclick = (e) => run(e.target, 'Settings', () => kb.setSettings(S));
+  $('#s-apply').onclick = (e) => run(e.target, 'Settings', () => (model.kind === 'mouse' ? kb.setMouseConfig(mouseConfig()) : kb.setSettings(S)));
   $('#s-delay').value = state.delay;
   $('#s-delay').onchange = (e) => { state.delay = Math.max(5, +e.target.value || 35); kb.delay = state.delay; save(); };
   $('#s-export').onclick = () => {
@@ -715,6 +785,8 @@ function initSettings() {
 }
 
 function initModelUi() {
+  initDpi();
+  initButtons();
   initLighting();
   initPerKey();
   initKeymap();

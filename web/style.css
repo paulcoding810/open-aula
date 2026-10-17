@@ -154,3 +154,10 @@ progress { width: 100%; margin-top: 12px; }
 .kb.drawn .key:hover { border-color: var(--accent); }
 .kb.drawn .key.sel { border-color: var(--accent); background: var(--key-sel); }
 .kb.drawn .key.mapped { border-color: #f59e0b; }
+
+.dpi-stages { display: grid; gap: 10px; }
+.dpi-stage { display: grid; grid-template-columns: 70px 1fr 90px 50px; gap: 12px; align-items: center; }
+.dpi-stage input[type="range"] { width: 100%; }
+.btn-list { display: grid; gap: 10px; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.btn-row > span:first-child { width: 150px; font-weight: 600; }

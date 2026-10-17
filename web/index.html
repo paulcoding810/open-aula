@@ -29,6 +29,8 @@
     <button data-tab="lighting" class="active">Lighting</button>
     <button data-tab="perkey">Per-key RGB</button>
     <button data-tab="keymap">Keymap</button>
+    <button data-tab="dpi">DPI</button>
+    <button data-tab="buttons">Buttons</button>
     <button data-tab="macros">Macros</button>
     <button data-tab="screen">Screen</button>
     <button data-tab="settings">Settings</button>
@@ -116,6 +118,24 @@
           </div>
         </div>
         <div class="actions"><button class="primary" id="km-apply">Apply layer</button></div>
+      </div>
+    </section>
+
+    <section id="tab-dpi" class="tab">
+      <div class="card">
+        <h2>DPI stages</h2>
+        <div id="dpi-stages" class="dpi-stages"></div>
+        <p class="hint">Pick the active stage with the radio button. The DPI button cycles through the stages; each stage lights the mouse in its colour.</p>
+        <div class="actions"><button class="primary" id="dpi-apply">Apply DPI</button></div>
+      </div>
+    </section>
+
+    <section id="tab-buttons" class="tab">
+      <div class="card">
+        <h2>Mouse buttons</h2>
+        <div id="btn-list" class="btn-list"></div>
+        <p class="hint">Buttons bound to a macro also upload all macros.</p>
+        <div class="actions"><button id="btn-reset">Reset to defaults</button><button class="primary" id="btn-apply">Apply buttons</button></div>
       </div>
     </section>
 

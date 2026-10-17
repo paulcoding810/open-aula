@@ -167,3 +167,49 @@ Reverse-engineered from `OemDrv.exe` in `AULA F75 driver.exe`, decompiled to `wo
 ## Macro buffer
 - Table: one `u16 addr, u16 size` entry per macro, with addresses counted from the buffer start. Only macros bound to keys are written, in binding order.
 - Each macro: a name-length byte, the UTF-16LE name, then 4-byte events `type<<4 | up<<7 | delay[19:16], delay[15:8], delay[7:0], code`. Types: 1 key, 2 mouse, 5 wheel.
+
+---
+
+# AULA SC620 mouse (`0x55` protocol)
+
+Reverse-engineered from `AULA SC620.exe` (MFC + YJXUI.dll, statically linked hidapi), decompiled to `work/sc620/sc620.c`. The app has two protocol families, picked by `device_type < 201`. The SC620's `config.xml` has `device_type="101"`, which selects family A (`FUN_0043a400`).
+
+## Transport
+- USB `A8A4:2255` and dongle `A8A5:2255` (MI_02) use the same protocol. Both are 64-byte output and input reports with report ID 0.
+- Packet (WebHID data, i.e. hidapi buffer minus the report-ID byte): `55 cmd flag chk len offLo offHi profile data[56]`.
+- `chk` = sum of bytes 4..63, mod 256. `flag` is `A5` for writes and `AE` for parameters.
+- The mouse replies `AA cmd …`. The driver retries after 100 ms and again after 1 s.
+- Feature report `0x51` (21 bytes) is used only for version strings.
+
+## Commands
+| cmd | data | |
+|---|---|---|
+| `03` | – | firmware version (reply bytes 3–5 are ASCII digits) |
+| `09` | 11 × 4 bytes | button map (see below) |
+| `0D` | 56-byte chunks with an offset | macro area, followed by `10` commit |
+| `0F` len 46 | parameter block | see below |
+| `21` len 3 | `00 00 mode` | light mode: 0 Wave, 1 Neon, 2 Cycling flash, 3 YOYO ball, 4 Single flash, 5 Breathing loop, 6 Off |
+| `22` len 3 | `00 00 stage+1 dpiLo dpiHi` | active DPI stage |
+| `23` len 3 | `00 00 rate` | polling rate: 1=125, 2=250, 3=500, 4=1000 Hz |
+| `30` len 0x2E | – | battery: reply byte 8 = %, byte 9 = charging |
+
+## Parameter block (`0F`)
+`profile, lightMode, rate, 6, stage+1, dpi[6] u16 LE (50–26000), rgb[6] (3 bytes each), 0 0 0 0, scrollReverse, liftoff (1/2 mm), sensor, debounce, sleep (minutes), esports`.
+
+Sensor bits: `10` ripple control, `01` angle snap, `20` motion sync.
+
+## Button entries (`FUN_00411110`)
+- `20 mask 00 00`: mouse button (1 left, 2 right, 4 middle, 8 back, 10 forward); `20 01 02` is a double click.
+- `21 38 01` / `21 38 FF`: wheel up / down. `21 55`: DPI cycle.
+- `10 mods hid 00`: keyboard key.
+- `30 lo hi 00`: consumer (media) key.
+- `70 idx n 00`: macro, repeat n times; `70 idx 01 02` repeats until released, `70 idx 01 03` until any click.
+- `00 00 00 00`: disabled.
+
+Slot order: left, right, middle, back, forward, DPI, wheel up, wheel down, then three spare slots.
+
+## Macro area
+- A 32 × u16 offset table, with data from 0x40.
+- 4-byte events: `delayLo delayHi flags code`.
+- Flags: bit7 = last event, bit6 = press; low bits 1 = modifier key, 2 = key, 3 = mouse button, 4 = wheel.
+- An empty macro is a single `00 00 80 00`.
