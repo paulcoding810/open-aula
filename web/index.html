@@ -177,7 +177,16 @@
           <div class="form">
             <label>Image or GIF <input type="file" id="sc-file" accept="image/gif,image/png,image/jpeg,image/webp"></label>
             <label>Fit
-              <select id="sc-fit"><option value="contain">Fit (letterbox)</option><option value="cover">Fill (crop)</option></select>
+              <select id="sc-fit"><option value="cover" selected>Fill (crop)</option><option value="contain">Fit (letterbox)</option></select>
+            </label>
+            <label>Frames
+              <select id="sc-step">
+                <option value="0" selected>Auto (fit the frame limit)</option>
+                <option value="1">Every frame</option>
+                <option value="2">Every 2nd frame</option>
+                <option value="3">Every 3rd frame</option>
+                <option value="4">Every 4th frame</option>
+              </select>
             </label>
             <p id="sc-info" class="hint"></p>
           </div>

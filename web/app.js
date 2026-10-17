@@ -625,7 +625,7 @@ async function decodeImage(file) {
   if ('ImageDecoder' in window && file.type === 'image/gif') {
     const dec = new ImageDecoder({ data: await file.arrayBuffer(), type: file.type });
     await dec.tracks.ready;
-    const count = Math.min(dec.tracks.selectedTrack.frameCount, model.screen.maxFrames);
+    const count = Math.min(dec.tracks.selectedTrack.frameCount, model.screen.maxFrames * 4);
     const out = [];
     for (let i = 0; i < count; i++) {
       const { image } = await dec.decode({ frameIndex: i });
@@ -644,7 +644,15 @@ function renderFrames() {
   const fit = $('#sc-fit').value;
   const c = new OffscreenCanvas(w, h);
   const ctx = c.getContext('2d');
-  frames = source.map((f) => {
+  const max = model.screen.maxFrames;
+  const step = +$('#sc-step').value || Math.max(1, Math.ceil(source.length / max));
+  const picked = [];
+  source.forEach((f, i) => {
+    if (i % step === 0) picked.push({ ...f });
+    else picked[picked.length - 1].delayMs += f.delayMs;
+  });
+  const dropped = Math.max(0, picked.length - max);
+  frames = picked.slice(0, max).map((f) => {
     fitDraw(ctx, f.img, w, h, fit);
     const data = ctx.getImageData(0, 0, w, h);
     return { pixels: rgb565(data.data, w, h), delayMs: f.delayMs, preview: data };
@@ -660,7 +668,7 @@ function renderFrames() {
   };
   tick();
   const kbytes = Math.round((model.screen.headLength + frames.length * w * h * 2) / 1024);
-  $('#sc-info').textContent = `${frames.length} frame${frames.length > 1 ? 's' : ''} · ${kbytes} KB to upload`;
+  $('#sc-info').textContent = `${frames.length} frame${frames.length > 1 ? 's' : ''}${step > 1 ? ` (every ${step}${['', '', 'nd', 'rd'][step] ?? 'th'} of ${source.length})` : ''} · ${kbytes} KB to upload${dropped ? ` · ${dropped} frames over the limit were cut` : ''}`;
   $('#sc-upload').disabled = false;
 }
 
@@ -687,6 +695,7 @@ function initScreen() {
     }
   };
   $('#sc-fit').onchange = () => source && renderFrames();
+  $('#sc-step').onchange = () => source && renderFrames();
   $('#sc-upload').onclick = async (e) => {
     const bar = $('#sc-progress');
     bar.hidden = false;
