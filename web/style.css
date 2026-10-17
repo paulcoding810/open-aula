@@ -161,3 +161,18 @@ progress { width: 100%; margin-top: 12px; }
 .btn-list { display: grid; gap: 10px; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .btn-row > span:first-child { width: 150px; font-weight: 600; }
+
+.mouse-layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+.mouse-view { position: relative; width: 200px; flex: none; }
+.mouse-view img { width: 100%; display: block; }
+.mouse-dot {
+  position: absolute; transform: translate(-50%, -50%); width: 22px; height: 22px; padding: 0;
+  border-radius: 50%; background: var(--accent); color: var(--accent-fg); border: 2px solid #fff;
+  font-size: 11px; font-weight: 700; line-height: 1;
+}
+.mouse-dot.mapped { background: #f59e0b; }
+.mouse-dot.focus { transform: translate(-50%, -50%) scale(1.3); box-shadow: 0 0 0 3px var(--key-sel); }
+.btn-row.focus { background: var(--key-hover); border-radius: 6px; }
+.btn-row { padding: 2px 6px; }
+.dot-num { display: inline-block; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: var(--accent-fg); text-align: center; font-size: 11px; line-height: 18px; margin-right: 4px; }
+.btn-row > span:first-child { width: 230px; }

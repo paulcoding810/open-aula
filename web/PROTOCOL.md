@@ -206,7 +206,7 @@ Sensor bits: `10` ripple control, `01` angle snap, `20` motion sync.
 - `70 idx n 00`: macro, repeat n times; `70 idx 01 02` repeats until released, `70 idx 01 03` until any click.
 - `00 00 00 00`: disabled.
 
-Slot order: left, right, middle, back, forward, DPI, wheel up, wheel down, then three spare slots.
+Slot order, confirmed on hardware (2026-10-17): 0 left, 1 right, 2 wheel click, 3 rear side, 4 front side, 5 DPI button (underside), 6 scroll up, 7 scroll down, 9 side button below the front one. Slots 8 and 10 have no physical button.
 
 ## Macro area
 - A 32 × u16 offset table, with data from 0x40.

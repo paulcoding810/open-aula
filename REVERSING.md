@@ -255,8 +255,35 @@ Where things live in the bundle:
 - The layout comes from `getFighting87` in the keyboard chunk. It is extracted to `work/f87/fighting87.rows.json` and turned into a layout by `python3 tools/gen_f87_layout.py work/f87/fighting87.rows.json web/models/f87pro.layout.js`.
 - `work/tests/f87.diff.mjs` runs the vendor's chunking code verbatim against `web/protocols/aa.js`.
 
-### AULA F75 and SC620
-Triage only; see `work/f75/TRIAGE.md` and `work/sc620/TRIAGE.md`. The F75 is SinoWealth "BYCOMBO4" (`OemDrv.exe`, decompiled to `work/f75/oem.c`), and its layout is in `Dev/kb/*/KB.ini`.
+### AULA F75 (SinoWealth BYCOMBO4, native)
+```sh
+innoextract -e -d work/f75 "AULA F75 driver.exe"
+analyzeHeadless work/f75/proj oem -import work/f75/app/OemDrv.exe -scriptPath tools -postScript DumpAll.java work/f75/oem.c
+grep -o -E 'L"CDev[A-Za-z0-9_]*::[A-Za-z0-9_]*' work/f75/oem.c | sort -u    # class/method names from log strings
+python3 tools/peek.py work/f75/app/OemDrv.exe dis 0x48c4b0 0x50            # thiscall arg order of AccessData
+python3 tools/gen_f75_layout.py work/f75/app/Dev/kb/1/KB.ini web/models/f75.layout.js
+```
+Steps:
+- `KB.ini` `Fw=24` selects `CDevG5KB` (FUN_0048b120 matches on `Fw` 0x18).
+- Its vtable is at `.rdata` 0x6100B4. Find it by searching `.rdata` for a known method address.
+- `FUN_0048b4d0` is AccessData: data pointer in ECX, then (object, hDev, oper, cmd, sub, len, delay).
+- `FUN_0048dbc0` is ApplySetting. `FUN_0048d810` patches the LED block, `FUN_0048d2d0` fills the matrix, and `FUN_0048cf00` serialises macros.
+- `FUN_0048c820` encodes key entries, and `FUN_00410a70` maps `KB.ini` keys to config-struct offsets.
+- Tests: `work/tests/f75.test.mjs`.
+
+### AULA SC620 (mouse, MFC + hidapi)
+```sh
+innoextract -e -d work/sc620 "AULA SC620-V1.2.2.exe"
+analyzeHeadless work/sc620/proj sc620 -import "work/sc620/app/AULA SC620.exe" -scriptPath tools -postScript DumpAll.java work/sc620/sc620.c
+python3 tools/callers.py work/sc620/sc620.c FUN_0043a400        # family A command builders
+python3 tools/peek.py "work/sc620/app/AULA SC620.exe" wstr 0x5495c0 1   # default values (DPI 800 …)
+```
+Steps:
+- Find the hidapi wrappers: `FUN_0043c980` is WriteFile, `FUN_0043ca60` is ReadFile, and `FUN_0043a400` is checksum + send + wait for `AA`.
+- The dispatcher at ~line 32560 picks family A when `device_type < 201`.
+- The builders are `FUN_0042a960` (params), `FUN_00429c20` (macros), `FUN_0042a460` (buttons), `FUN_00411110` (button encoding), `FUN_0042a6d0` (DPI stage) and `FUN_0042a860` (rate).
+- Combo-box item values come from disassembling the AddItem pushes in `FUN_0042d410`.
+- Tests: `work/tests/sc620.test.mjs`.
 
 ## Open questions
 

@@ -6,7 +6,17 @@ export const CMD = {
 };
 export const FLAG = { WRITE: 0xa5, PARAM: 0xae };
 export const MACRO_PLAY = ['Repeat N times', 'Repeat until released', 'Repeat until any click'];
-export const BUTTON_SLOTS = ['Left', 'Right', 'Middle', 'Back (button 4)', 'Forward (button 5)', 'DPI button'];
+export const BUTTON_SLOTS = [
+  { slot: 0, name: 'Left click', x: 92, y: 95, locked: true },
+  { slot: 1, name: 'Right click', x: 205, y: 95 },
+  { slot: 2, name: 'Wheel click', x: 148, y: 108 },
+  { slot: 6, name: 'Scroll up', x: 148, y: 62 },
+  { slot: 7, name: 'Scroll down', x: 148, y: 152 },
+  { slot: 4, name: 'Front side button', x: 16, y: 168 },
+  { slot: 3, name: 'Rear side button', x: 16, y: 222 },
+  { slot: 9, name: 'Side button (below front)', x: 22, y: 300 },
+  { slot: 5, name: 'DPI button (underside)', x: 148, y: 500 },
+];
 export const DEFAULT_BUTTONS = [
   [0x20, 0x01, 0, 0], [0x20, 0x02, 0, 0], [0x20, 0x04, 0, 0], [0x20, 0x08, 0, 0], [0x20, 0x10, 0, 0],
   [0x21, 0x55, 0, 0], [0x21, 0x38, 0x01, 0], [0x21, 0x38, 0xff, 0], [0x21, 0xaa, 0, 0], [0x21, 0x61, 0, 0], [0x21, 0x62, 0, 0],

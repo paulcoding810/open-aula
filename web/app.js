@@ -694,7 +694,10 @@ function initButtons() {
   if (!state.mouse) return;
   const M = state.mouse;
   const types = [['default', 'Default'], ['disable', 'Disabled'], ['mouse', 'Mouse'], ['key', 'Keyboard key'], ['media', 'Media'], ['dpiLoop', 'DPI cycle'], ['macro', 'Macro']];
-  (model.buttonSlots ?? []).forEach((name, i) => {
+  const view = $('#mouse-view');
+  view.innerHTML = model.image?.src ? `<img src="${model.image.src}" alt="">` : '';
+  view.hidden = !model.image?.src;
+  (model.buttonSlots ?? []).forEach(({ slot: i, name, x, y, locked }, n) => {
     const a = M.buttons[i] ?? { type: 'default' };
     const row = document.createElement('div');
     row.className = 'btn-row';
@@ -707,7 +710,22 @@ function initButtons() {
         <select data-f="mode">${(model.macroPlay ?? []).map((n, j) => `<option value="${j}" ${a.mode === j ? 'selected' : ''}>${n}</option>`).join('')}</select>
         <input data-f="loops" type="number" min="1" max="255" value="${a.loops ?? 1}" title="Repeat count">`,
     }[a.type] ?? '';
-    row.innerHTML = `<span>${name}</span>${typeSel}${sub}`;
+    row.innerHTML = `<span><b class="dot-num">${n + 1}</b> ${name}</span>${locked ? '<em class="hint">Locked (keeps a working click)</em>' : typeSel + sub}`;
+    row.dataset.slot = i;
+    if (model.image?.src) {
+      const dot = document.createElement('button');
+      dot.className = 'mouse-dot' + (M.buttons[i] ? ' mapped' : '');
+      dot.textContent = n + 1;
+      dot.title = name;
+      Object.assign(dot.style, { left: `${(x / model.image.width) * 100}%`, top: `${(y / model.image.height) * 100}%` });
+      const focus = (on) => row.classList.toggle('focus', on);
+      dot.onmouseenter = () => focus(true);
+      dot.onmouseleave = () => focus(false);
+      dot.onclick = () => { row.scrollIntoView({ block: 'nearest' }); row.querySelector('select')?.focus(); };
+      row.onmouseenter = () => dot.classList.add('focus');
+      row.onmouseleave = () => dot.classList.remove('focus');
+      view.appendChild(dot);
+    }
     row.querySelectorAll('[data-f]').forEach((el) => {
       el.onchange = () => {
         const f = el.dataset.f;

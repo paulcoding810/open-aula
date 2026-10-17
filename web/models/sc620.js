@@ -10,6 +10,7 @@ export default {
     { vendorId: 0xa8a5, productId: 0x2255, role: 'dongle' },
   ],
   layout: [],
+  image: { src: 'assets/sc620.png', width: 297, height: 525 },
   features: { lighting: true, dpi: true, buttons: true, macros: true, settings: true },
   lightModes: [
     { mode: 0, name: 'Wave', caps: 0 }, { mode: 1, name: 'Neon', caps: 0 }, { mode: 2, name: 'Cycling flash', caps: 0 },
