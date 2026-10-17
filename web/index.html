@@ -196,6 +196,16 @@
             <button id="sc-time">Sync clock</button>
             <button id="sc-blank" title="Uploads a single black frame">Blank screen</button>
           </div>
+          <details class="tips">
+            <summary>Making a small GIF with ffmpeg</summary>
+            <p class="hint">Every frame costs ~63 KB on the keyboard no matter how small the GIF file is, so keep the frame count low: 8–12 fps for 2–4 seconds works well (30 frames ≈ 1.9 MB). Install with <code>brew install ffmpeg</code>.</p>
+            <p class="hint">From a video, 3 seconds at 10 fps, cropped to fill the screen:</p>
+            <pre class="cmd">ffmpeg -i input.mp4 -t 3 -vf "fps=10,scale=135:240:force_original_aspect_ratio=increase,crop=135:240" out.gif</pre>
+            <p class="hint">Thin out an existing GIF to 8 fps:</p>
+            <pre class="cmd">ffmpeg -i input.gif -vf "fps=8,scale=135:240:force_original_aspect_ratio=increase,crop=135:240" out.gif</pre>
+            <p class="hint">Better colours (two-pass palette):</p>
+            <pre class="cmd">ffmpeg -i input.mp4 -t 3 -vf "fps=10,scale=135:240:force_original_aspect_ratio=increase,crop=135:240,split[a][b];[a]palettegen[p];[b][p]paletteuse" out.gif</pre>
+          </details>
         </div>
         <div class="card center">
           <canvas id="sc-preview" width="135" height="240"></canvas>

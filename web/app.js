@@ -704,6 +704,10 @@ function initScreen() {
     bar.hidden = true;
   };
   $('#sc-time').onclick = (e) => run(e.target, 'Clock sync', () => kb.syncTime(1));
+  $$('.tips pre.cmd').forEach((pre) => {
+    pre.title = 'Click to copy';
+    pre.onclick = () => navigator.clipboard.writeText(pre.textContent).then(() => toast('Command copied'), () => toast('Copy failed', true));
+  });
   $('#sc-blank').onclick = async (e) => {
     const { width: w, height: h } = model.screen;
     const bar = $('#sc-progress');
