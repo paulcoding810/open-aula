@@ -17,14 +17,18 @@ Only the S75 Pro, and the SC620's button map, have been checked against a real d
 
 ## Running it
 
-WebHID needs a Chromium-based desktop browser (Chrome, Edge, Brave…) and a secure context, which `localhost` counts as.
+WebHID needs a Chromium-based desktop browser (Chrome, Edge, Brave…) and a secure context: HTTPS or `localhost`.
+
+**On GitHub Pages:** `.github/workflows/pages.yml` publishes `web/` as-is on every push to `main` that touches it, or on demand from the Actions tab. There is no build step. To turn it on, set *Settings → Pages → Source* to **GitHub Actions**.
+
+**Locally:**
 
 ```sh
 cd web
 python3 -m http.server 8765
 ```
 
-1. Open http://localhost:8765 and click **Connect device**.
+1. Open the page (http://localhost:8765 locally) and click **Connect device**.
 2. In the browser's device list, select **every** entry for your device. Keyboards and dongles expose several HID interfaces under the same name, and the configuration interface is often not the first one. The app warns you if it finds a device but not its configuration interface.
 3. With several devices connected, switch between them from the header.
 
