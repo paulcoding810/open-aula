@@ -7,8 +7,8 @@ export default {
   kind: 'keyboard',
   protocol: 'aula04',
   usb: [
-    { vendorId: 0x0c45, productId: 0x800a, role: 'usb' },
-    { vendorId: 0x05ac, productId: 0x024f, role: 'dongle' },
+    { vendorId: 0x0c45, productId: 0x800a, role: 'usb', notName: /F75\s*-?\s*Max/i },
+    { vendorId: 0x05ac, productId: 0x024f, role: 'dongle', notName: /F75\s*-?\s*Max/i },
   ],
   layout: KEYS,
   image: { src: 'assets/s75pro.png', width: 800, height: 300 },

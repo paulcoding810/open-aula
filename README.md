@@ -12,6 +12,7 @@ A browser-based configuration tool for AULA keyboards and mice, built from rever
 | **AULA SC620** (mouse) | USB, 2.4 GHz receiver | DPI stages, buttons, lighting, macros, sensor and polling settings, battery | **Button map confirmed** on real hardware; other features untested |
 | AULA F87 Pro | USB, dongle | lighting, per-key RGB, keymap (base + Fn), macros, LED matrix, settings | Untested: built from the vendor's code only |
 | AULA F75 | USB | lighting, keymap (base layer), macros, settings | Untested: built from the vendor's code only |
+| AULA F75 Max | USB, 2.4 GHz dongle | lighting, per-key RGB, keymap (base + Fn), macros, screen GIF (128 × 128), settings | Untested: same protocol and IDs as the S75 Pro, selected by product name `F75 Max`; layout reused from the S75 Pro |
 
 Only the S75 Pro, and the SC620's button map, have been checked against a real device. Everything else is implemented from the decompiled or decoded vendor software and covered by offline tests, but may still be wrong in ways only hardware would reveal. Check the **Log** tab while testing; it shows every packet sent and received.
 

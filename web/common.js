@@ -17,7 +17,10 @@ export function toU8(dv, want) {
   return u.length > want ? u.slice(u.length - want) : u.slice();
 }
 
-export const matchesId = (dev, ids) => ids.some((i) => i.vendorId === dev.vendorId && i.productId === dev.productId);
+// Models can share USB IDs; an entry may add `name` (must match productName) or `notName` (must not).
+export const matchesId = (dev, ids) => ids.some((i) => i.vendorId === dev.vendorId && i.productId === dev.productId
+  && (!i.name || i.name.test(dev.productName ?? ''))
+  && (!i.notName || !i.notName.test(dev.productName ?? '')));
 
 export class ReportQueue {
   constructor(dev) {
